@@ -76,26 +76,11 @@
             text-align: center;
         }
         
-        #player-stats-panel ul, #equipment-panel ul, #inventory-list {
+        #player-stats-panel ul, #equipment-panel ul {
             list-style-type: none;
             padding: 0;
             margin: 0;
         }
-        #inventory-list .category-header {
-            font-weight: bold;
-            color: var(--highlight-color);
-            margin-top: 10px;
-            font-size: 0.8em;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 4px;
-        }
-        #inventory-list li {
-             display: flex;
-            justify-content: space-between;
-            font-size: 0.9em;
-            padding: 4px 0;
-        }
-
 
         #player-stats-panel li, #equipment-panel li {
             display: flex;
@@ -190,10 +175,10 @@
             background-color: #c14d4d;
         }
 
-        /* --- 商店視圖 --- */
-        #shop-view { display: none; flex-direction: column; }
-        #shop-view.active { display: flex; }
-        #shop-tabs {
+        /* --- 商店/背包視圖 --- */
+        #shop-view, #inventory-view, #item-inventory-view { display: none; flex-direction: column; }
+        #shop-view.active, #inventory-view.active, #item-inventory-view.active { display: flex; }
+        #shop-tabs, #inventory-tabs, #item-inventory-tabs {
             display: flex;
             justify-content: center;
             margin-bottom: 15px;
@@ -206,11 +191,11 @@
             background-color: #5c5a74;
             border-color: var(--highlight-color);
         }
-        #shop-content {
+        #shop-content, #inventory-content, #item-inventory-content {
             flex-grow: 1;
             overflow-y: auto;
         }
-        #shop-item-list {
+        #shop-item-list, #inventory-item-list, #item-inventory-item-list {
             list-style: none;
             padding: 0;
         }
@@ -266,6 +251,34 @@
             object-fit: contain;
         }
         #combat-actions { margin-top: 20px; }
+
+        /* --- 數量選擇 Modal --- */
+        #quantity-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-color);
+        }
+        #quantity-input {
+            width: 80px;
+            margin: 15px;
+            padding: 5px;
+            text-align: center;
+        }
         
         /* 手機版響應式設計 */
         @media (max-width: 768px) {
@@ -305,10 +318,15 @@
                     <li><span>武器</span> <span id="equip-weapon"></span></li>
                     <li><span>護甲</span> <span id="equip-armor"></span></li>
                 </ul>
+                <div style="text-align: center; margin-top: 10px;">
+                    <button class="game-button" style="width: 90%;" onclick="game.changeView('inventory-view')">管理裝備</button>
+                </div>
             </div>
             <div id="inventory-panel" class="sidebar-panel">
                  <h3>道具欄</h3>
-                 <ul id="inventory-list"></ul>
+                 <div style="text-align: center; margin-top: 10px;">
+                    <button class="game-button" style="width: 90%;" onclick="game.changeView('item-inventory-view')">管理道具</button>
+                </div>
             </div>
         </aside>
 
@@ -343,6 +361,37 @@
                     <button class="game-button" onclick="game.changeView('map-view')">離開商店</button>
                 </div>
             </div>
+            
+            <!-- 裝備背包視圖 -->
+            <div id="inventory-view" class="view">
+                 <h2>裝備背包</h2>
+                <div id="inventory-tabs">
+                    <button class="game-button shop-tab-button active" onclick="game.changeInventoryTab(event, 'weapon')">武器</button>
+                    <button class="game-button shop-tab-button" onclick="game.changeInventoryTab(event, 'armor')">防具</button>
+                </div>
+                <div id="inventory-content">
+                    <ul id="inventory-item-list"></ul>
+                </div>
+                <div style="text-align: center; margin-top: auto;">
+                    <button class="game-button" onclick="game.changeView('map-view')">返回地圖</button>
+                </div>
+            </div>
+
+             <!-- 道具背包視圖 -->
+            <div id="item-inventory-view" class="view">
+                 <h2>道具背包</h2>
+                <div id="item-inventory-tabs">
+                    <button class="game-button shop-tab-button active" onclick="game.changeItemInventoryTab(event, 'potion')">道具</button>
+                    <button class="game-button shop-tab-button" onclick="game.changeItemInventoryTab(event, 'material')">素材</button>
+                    <button class="game-button shop-tab-button" onclick="game.changeItemInventoryTab(event, 'quest')">任務</button>
+                </div>
+                <div id="item-inventory-content">
+                    <ul id="item-inventory-item-list"></ul>
+                </div>
+                <div style="text-align: center; margin-top: auto;">
+                    <button class="game-button" onclick="game.changeView('map-view')">返回地圖</button>
+                </div>
+            </div>
 
             <!-- 戰鬥視圖 -->
             <div id="combat-view" class="view">
@@ -353,7 +402,7 @@
                         <div class="participant-name">艾拉公主</div>
                         <div class="participant-hp" id="combat-player-hp"></div>
                         <div class="hp-bar"><div class="hp-bar-inner" id="combat-player-hp-bar"></div></div>
-                        <img src="https://placehold.co/128x128/e0ddeb/2c2a3e?text=艾拉" alt="艾拉公主">
+                        <img src="https://cdn.jsdelivr.net/gh/a25167145/RPG@main/pri.png" alt="艾拉公主">
                     </div>
                     <!-- 敵人 -->
                     <div class="participant">
@@ -370,6 +419,19 @@
 
         <!-- ===== 訊息日誌 ===== -->
         <div id="message-log"></div>
+    </div>
+
+    <!-- 數量選擇 Modal -->
+    <div id="quantity-modal">
+        <div class="modal-content">
+            <h4 id="modal-item-name"></h4>
+            <p>請輸入購買數量：</p>
+            <input type="number" id="quantity-input" value="1" min="1">
+            <div class="modal-buttons">
+                <button id="confirm-buy-btn" class="game-button">確認</button>
+                <button id="cancel-buy-btn" class="game-button">取消</button>
+            </div>
+        </div>
     </div>
 
 <script>
@@ -404,27 +466,33 @@ const ITEMS = {
     'm05': { name: '獅鷲的羽毛', type: 'material', price: 30 },
     'm06': { name: '風之結晶', type: 'material', price: 120 },
     'm07': { name: '熔岩碎塊', type: 'material', price: 40 },
-    'm08': { name: '火焰之心', type: 'material', price: 180 }
+    'm08': { name: '火焰之心', type: 'material', price: 180 },
+    'm09': { name: '堅硬的石頭', type: 'material', price: 25 },
+    'm10': { name: '魔力核心', type: 'material', price: 150 },
+    'm11': { name: '惡犬的利爪', type: 'material', price: 35 }
 };
 
 const ENEMIES = {
     // 一般怪物
-    'mist_spirit': { name: '迷霧精怪', hp: 50, attack: 12, defense: 4, gold: 20, img: 'https://placehold.co/128x128/a3b1c6/e0ddeb?text=精怪', drops: { common: { id: 'm01', chance: 0.7 }, rare: { id: 'm02', chance: 0.15 } } },
-    'poison_spider': { name: '劇毒蜘蛛', hp: 70, attack: 18, defense: 6, gold: 35, img: 'https://placehold.co/128x128/4b5320/e0ddeb?text=蜘蛛', drops: { common: { id: 'm03', chance: 0.8 }, rare: { id: 'm04', chance: 0.2 } } },
-    'lava_troll': { name: '熔岩巨魔', hp: 200, attack: 35, defense: 18, gold: 150, img: 'https://placehold.co/128x128/8b0000/e0ddeb?text=巨魔', drops: { common: { id: 'm07', chance: 0.9 }, rare: { id: 'm08', chance: 0.25 } } },
+    'mist_spirit': { name: '迷霧精怪', hp: 50, attack: 12, defense: 4, gold: 20, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M1.png', drops: { common: { id: 'm01', chance: 0.7 }, rare: { id: 'm02', chance: 0.15 } } },
+    'poison_spider': { name: '劇毒蜘蛛', hp: 70, attack: 18, defense: 6, gold: 35, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M2.png', drops: { common: { id: 'm03', chance: 0.8 }, rare: { id: 'm04', chance: 0.2 } } },
+    'mountain_roc': { name: '山地巨鷹', hp: 120, attack: 25, defense: 8, gold: 60, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M4.png', drops: { common: { id: 'm05', chance: 0.8 }, rare: { id: 'm06', chance: 0.15 } } },
+    'rock_golem': { name: '岩石傀儡', hp: 180, attack: 20, defense: 18, gold: 80, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M3.png', drops: { common: { id: 'm09', chance: 0.9 }, rare: { id: 'm10', chance: 0.1 } } },
+    'lava_troll': { name: '熔岩巨魔', hp: 200, attack: 35, defense: 18, gold: 150, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M6.png', drops: { common: { id: 'm07', chance: 0.9 }, rare: { id: 'm08', chance: 0.25 } } },
+    'ash_hound': { name: '灰燼惡犬', hp: 160, attack: 40, defense: 12, gold: 120, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M5.png', drops: { common: { id: 'm11', chance: 0.7 }, rare: { id: 'm08', chance: 0.1 } } },
     // 區域頭目
-    'forest_guardian': { name: '遠古樹精', hp: 250, attack: 22, defense: 10, gold: 200, isBoss: true, img: 'https://placehold.co/128x128/556b2f/e0ddeb?text=樹精', drops: { common: { id: 'm02', chance: 1.0 }, rare: { id: 'u01', chance: 1.0 } } },
-    'griffin': { name: '兇猛的獅鷲', hp: 350, attack: 32, defense: 15, gold: 300, isBoss: true, img: 'https://placehold.co/128x128/d4a017/e0ddeb?text=獅鷲', drops: { common: { id: 'm06', chance: 1.0 }, rare: { id: 'u01', chance: 1.0 } } },
-    'wasteland_tyrant': { name: '燼火暴君', hp: 500, attack: 42, defense: 20, gold: 500, isBoss: true, img: 'https://placehold.co/128x128/b22222/e0ddeb?text=暴君', drops: { common: { id: 'm08', chance: 1.0 }, rare: { id: 'u02', chance: 1.0 } } },
+    'forest_guardian': { name: '遠古樹精', hp: 250, attack: 22, defense: 10, gold: 200, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/B1.png', drops: { common: { id: 'm02', chance: 1.0 }, rare: { id: 'u01', chance: 1.0 } } },
+    'griffin': { name: '兇猛的獅鷲', hp: 350, attack: 32, defense: 15, gold: 300, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/B2.png', drops: { common: { id: 'm06', chance: 1.0 }, rare: { id: 'u01', chance: 1.0 } } },
+    'wasteland_tyrant': { name: '燼火暴君', hp: 500, attack: 42, defense: 20, gold: 500, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/B3.png', drops: { common: { id: 'm08', chance: 1.0 }, rare: { id: 'u02', chance: 1.0 } } },
     // 最終頭目
-    'boss': { name: '凱蘭爵士', hp: 800, attack: 50, defense: 25, gold: 0, isBoss: true, img: 'https://placehold.co/128x128/ffd54f/2c2a3e?text=凱蘭' }
+    'boss': { name: '凱蘭爵士', hp: 800, attack: 50, defense: 25, gold: 0, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/BOSS.png' }
 };
 
 const LOCATIONS = {
     'city': { name: '艾利多爾王城', encounters: [], actions: ['shop'], unlockCondition: () => true },
     'forest': { name: '低語森林', encounters: ['mist_spirit', 'poison_spider'], boss: 'forest_guardian', unlockCondition: () => game.storyProgress >= 's1_journey_start' },
-    'mountains': { name: '風蝕山脈', encounters: [], boss: 'griffin', unlockCondition: () => game.storyProgress >= 's4_mountain_unlocked' },
-    'wasteland': { name: '燼火之地', encounters: ['lava_troll'], boss: 'wasteland_tyrant', unlockCondition: () => game.storyProgress >= 's5_wasteland_unlocked' },
+    'mountains': { name: '風蝕山脈', encounters: ['mountain_roc', 'rock_golem'], boss: 'griffin', unlockCondition: () => game.storyProgress >= 's4_mountain_unlocked' },
+    'wasteland': { name: '燼火之地', encounters: ['lava_troll', 'ash_hound'], boss: 'wasteland_tyrant', unlockCondition: () => game.storyProgress >= 's5_wasteland_unlocked' },
     'peak': { name: '燼火之巔', encounters: [], boss: 'boss', unlockCondition: () => game.storyProgress >= 's6_peak_unlocked' }
 };
 
@@ -447,7 +515,6 @@ const STORY = {
             action: () => {
                 game.storyProgress = 's3_forest_hermit_met';
                 game.player.inventory['p02'] = (game.player.inventory['p02'] || 0) + 1;
-                game.renderInventory();
                 game.logMessage('你獲得了「靜心草」。', 'reward-msg');
                 game.logMessage('妳將草藥師的話銘記在心，繼續在低語森林中探索。', 'story-msg');
                 game.renderMap();
@@ -489,6 +556,8 @@ const game = {
     currentView: 'story-view',
     combatState: {},
     currentShopTab: 'weapon',
+    currentInventoryTab: 'weapon',
+    currentItemInventoryTab: 'potion',
 
     init() {
         this.player = {
@@ -496,7 +565,7 @@ const game = {
             hp: 100,
             attack: 10,
             defense: 10,
-            gold: 50,
+            gold: 70,
             equipment: {
                 weapon: 'w00',
                 armor: 'a01'
@@ -506,8 +575,6 @@ const game = {
         };
         this.storyProgress = 's0_start';
         this.updatePlayerStats();
-        this.renderInventory();
-        this.renderMap();
         this.logMessage("歡迎來到《艾拉女王與悲慟之火的悲歌》", "story-msg");
         this.advanceStory('s0_start');
     },
@@ -529,44 +596,6 @@ const game = {
         document.getElementById('stat-gold').textContent = this.player.gold;
         document.getElementById('equip-weapon').textContent = weapon.name;
         document.getElementById('equip-armor').textContent = armor.name;
-    },
-
-    renderInventory() {
-        const list = document.getElementById('inventory-list');
-        list.innerHTML = '';
-        
-        const categories = {
-            potion: '道具',
-            upgrade: '強化物品',
-            material: '素材',
-            quest: '任務物品'
-        };
-
-        const groupedInventory = {};
-        for (const itemId in this.player.inventory) {
-            if (this.player.inventory[itemId] > 0) {
-                const item = ITEMS[itemId];
-                if (!groupedInventory[item.type]) {
-                    groupedInventory[item.type] = [];
-                }
-                groupedInventory[item.type].push({ ...item, id: itemId, count: this.player.inventory[itemId] });
-            }
-        }
-
-        for (const type in categories) {
-            if (groupedInventory[type] && groupedInventory[type].length > 0) {
-                const header = document.createElement('li');
-                header.className = 'category-header';
-                header.textContent = categories[type];
-                list.appendChild(header);
-
-                groupedInventory[type].forEach(item => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<span>${item.name}</span> <span>x${item.count}</span>`;
-                    list.appendChild(li);
-                });
-            }
-        }
     },
 
     renderMap() {
@@ -604,7 +633,7 @@ const game = {
 
     changeShopTab(event, tabName) {
         this.currentShopTab = tabName;
-        document.querySelectorAll('.shop-tab-button').forEach(btn => {
+        document.querySelectorAll('#shop-tabs .shop-tab-button').forEach(btn => {
             btn.classList.remove('active');
         });
         event.currentTarget.classList.add('active');
@@ -641,6 +670,13 @@ const game = {
         } else {
             for (const itemId in ITEMS) {
                 const item = ITEMS[itemId];
+
+                if (item.type === 'weapon' || item.type === 'armor') {
+                    if (this.player.equipment[item.type] === itemId || (this.player.inventory[itemId] && this.player.inventory[itemId] > 0)) {
+                        continue;
+                    }
+                }
+
                 let show = false;
                 if (this.currentShopTab === 'weapon' && item.type === 'weapon') show = true;
                 if (this.currentShopTab === 'armor' && item.type === 'armor') show = true;
@@ -672,6 +708,97 @@ const game = {
         }
     },
 
+    changeInventoryTab(event, tabName) {
+        this.currentInventoryTab = tabName;
+        document.querySelectorAll('#inventory-tabs .shop-tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.currentTarget.classList.add('active');
+        this.renderInventoryContent();
+    },
+
+    renderInventoryContent() {
+        const list = document.getElementById('inventory-item-list');
+        list.innerHTML = '';
+        let hasItems = false;
+        for (const itemId in this.player.inventory) {
+            if (this.player.inventory[itemId] > 0) {
+                const item = ITEMS[itemId];
+                if (item.type === this.currentInventoryTab) {
+                    hasItems = true;
+                    const li = document.createElement('li');
+                    li.className = 'shop-item';
+                    let statsText = '';
+                    if (item.type === 'weapon') statsText = `攻擊 +${item.attack}`;
+                    if (item.type === 'armor') statsText = `防禦 +${item.defense}`;
+                    
+                    li.innerHTML = `
+                        <div>
+                            <strong>${item.name} (x${this.player.inventory[itemId]})</strong>
+                            <div class="item-info">${statsText}</div>
+                        </div>
+                        <div></div>
+                        <button class="game-button" onclick="game.equipItem('${itemId}')">裝備</button>
+                    `;
+                    list.appendChild(li);
+                }
+            }
+        }
+        if (!hasItems) {
+            list.innerHTML = `<li style="text-align:center; color: var(--border-color); padding: 20px;">此類別沒有任何物品。</li>`;
+        }
+    },
+
+    changeItemInventoryTab(event, tabName) {
+        this.currentItemInventoryTab = tabName;
+        document.querySelectorAll('#item-inventory-tabs .shop-tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.currentTarget.classList.add('active');
+        this.renderItemInventoryContent();
+    },
+    
+    renderItemInventoryContent() {
+        const list = document.getElementById('item-inventory-item-list');
+        list.innerHTML = '';
+        let hasItems = false;
+        
+        const typesToShow = [];
+        if (this.currentItemInventoryTab === 'potion') typesToShow.push('potion', 'upgrade');
+        else typesToShow.push(this.currentItemInventoryTab);
+
+        for (const itemId in this.player.inventory) {
+            const count = this.player.inventory[itemId];
+            if (count > 0) {
+                const item = ITEMS[itemId];
+                if (typesToShow.includes(item.type)) {
+                    hasItems = true;
+                    const li = document.createElement('li');
+                    li.className = 'shop-item';
+                    let statsText = item.description || '';
+                     if (item.effect === 'heal') statsText = `恢復 ${item.value} HP`;
+                    else if (item.effect === 'heal_full') statsText = `恢復所有 HP`;
+                    else if (item.effect === 'buff_atk') statsText = `攻擊 x${item.value} (${item.duration}回合)`;
+                    else if (item.effect === 'buff_hp') statsText = `生命上限+${item.value} (${item.duration}回合)`;
+                    else if (item.effect === 'perm_hp') statsText = `永久生命上限 +${item.value}`;
+                    
+                    li.innerHTML = `
+                        <div>
+                            <strong>${item.name} (x${count})</strong>
+                             <div class="item-info">${statsText}</div>
+                        </div>
+                        <div></div>
+                        <div></div>
+                    `;
+                    list.appendChild(li);
+                }
+            }
+        }
+        if (!hasItems) {
+            list.innerHTML = `<li style="text-align:center; color: var(--border-color); padding: 20px;">此類別沒有任何物品。</li>`;
+        }
+    },
+
     logMessage(text, className = '') {
         const log = document.getElementById('message-log');
         const p = document.createElement('p');
@@ -681,9 +808,10 @@ const game = {
     },
 
     changeView(viewId) {
-        // If leaving the shop, clear its content to prevent visual bugs
-        if (this.currentView === 'shop-view' && viewId !== 'shop-view') {
-            document.getElementById('shop-item-list').innerHTML = '';
+        if (this.currentView.includes('shop') || this.currentView.includes('inventory')) {
+             document.getElementById('shop-item-list').innerHTML = '';
+             document.getElementById('inventory-item-list').innerHTML = '';
+             document.getElementById('item-inventory-item-list').innerHTML = '';
         }
 
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -691,9 +819,21 @@ const game = {
         this.currentView = viewId;
         
         if (viewId === 'shop-view') {
-            const firstTab = document.querySelector('.shop-tab-button');
+            const firstTab = document.querySelector('#shop-tabs .shop-tab-button');
             if (firstTab) {
                 this.changeShopTab({currentTarget: firstTab}, 'weapon');
+            }
+        }
+        if (viewId === 'inventory-view') {
+            const firstTab = document.querySelector('#inventory-tabs .shop-tab-button');
+             if (firstTab) {
+                this.changeInventoryTab({currentTarget: firstTab}, 'weapon');
+            }
+        }
+        if (viewId === 'item-inventory-view') {
+            const firstTab = document.querySelector('#item-inventory-tabs .shop-tab-button');
+             if (firstTab) {
+                this.changeItemInventoryTab({currentTarget: firstTab}, 'potion');
             }
         }
     },
@@ -706,7 +846,6 @@ const game = {
         if (storyKey === 's7_final_confrontation') {
              if (this.player.inventory['p02'] > 0) {
                 this.player.inventory['p02']--;
-                this.renderInventory();
                 this.logMessage('你使用了「靜心草」，混亂的思緒為之一清。');
              }
         }
@@ -735,6 +874,11 @@ const game = {
             this.advanceStory('s2_forest_hermit');
             return;
         }
+        
+        if(locId === 'peak' && this.storyProgress >= 's6_peak_unlocked') {
+            this.advanceStory('s7_final_confrontation');
+            return;
+        }
 
         if (loc.actions && loc.actions.includes('shop')) {
             this.changeView('shop-view');
@@ -746,36 +890,91 @@ const game = {
                 const enemyId = loc.encounters[Math.floor(Math.random() * loc.encounters.length)];
                 this.startCombat(enemyId);
             } else {
-                this.logMessage('這裡似乎很平靜...');
+                 if (Math.random() < 0.6) {
+                    const foundGold = 10 + Math.floor(Math.random() * 16);
+                    this.player.gold += foundGold;
+                    this.logMessage(`你在路上發現了一個錢袋，裡面有 ${foundGold} 枚金幣。`, 'reward-msg');
+                    this.updatePlayerStats();
+                } else {
+                    const foundItemId = 'p01_low';
+                    const foundItem = ITEMS[foundItemId];
+                    this.player.inventory[foundItemId] = (this.player.inventory[foundItemId] || 0) + 1;
+                    this.logMessage(`你在一個箱子裡找到了一瓶 ${foundItem.name}。`, 'reward-msg');
+                }
                 this.changeView('map-view');
             }
         } else {
              this.changeView('map-view');
         }
     },
-    
-    buyItem(itemId) {
+
+    showQuantityModal(itemId) {
         const item = ITEMS[itemId];
-        if(this.player.gold >= item.price) {
-            this.player.gold -= item.price;
+        document.getElementById('modal-item-name').textContent = item.name;
+        const quantityInput = document.getElementById('quantity-input');
+        quantityInput.value = 1;
+        quantityInput.max = Math.floor(this.player.gold / item.price);
+
+        const confirmBtn = document.getElementById('confirm-buy-btn');
+        const cancelBtn = document.getElementById('cancel-buy-btn');
+        const modal = document.getElementById('quantity-modal');
+
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+        newConfirmBtn.onclick = () => {
+            const quantity = parseInt(quantityInput.value, 10);
+            if (quantity > 0) {
+                this.confirmBuy(itemId, quantity);
+            }
+            this.hideQuantityModal();
+        };
+        
+        cancelBtn.onclick = () => this.hideQuantityModal();
+        
+        modal.style.display = 'flex';
+    },
+
+    hideQuantityModal() {
+        document.getElementById('quantity-modal').style.display = 'none';
+    },
+
+    confirmBuy(itemId, quantity) {
+        const item = ITEMS[itemId];
+        const totalCost = item.price * quantity;
+
+        if (this.player.gold >= totalCost) {
+            this.player.gold -= totalCost;
+
             if(item.type === 'potion' || item.type === 'upgrade') {
-                this.player.inventory[itemId] = (this.player.inventory[itemId] || 0) + 1;
-                
+                this.player.inventory[itemId] = (this.player.inventory[itemId] || 0) + quantity;
                 if(item.effect === 'perm_hp') {
-                    this.usePermanentUpgrade(itemId);
+                    for(let i = 0; i < quantity; i++) {
+                        this.usePermanentUpgrade(itemId);
+                    }
                 }
             } else { 
                 const oldItemId = this.player.equipment[item.type];
-                if (ITEMS[oldItemId].price !== 0) {
+                if (ITEMS[oldItemId].price > 0) {
                     this.player.inventory[oldItemId] = (this.player.inventory[oldItemId] || 0) + 1;
                 }
                 this.player.equipment[item.type] = itemId;
             }
-            this.logMessage(`你購買了 ${item.name}。`, 'reward-msg');
+
+            this.logMessage(`你購買了 ${item.name} x${quantity}。`, 'reward-msg');
             this.updatePlayerStats();
-            this.renderInventory();
+            if (this.currentView === 'shop-view') this.renderShopContent();
         } else {
             this.logMessage('你的金幣不夠！');
+        }
+    },
+    
+    buyItem(itemId) {
+        const item = ITEMS[itemId];
+        if (item.type === 'potion' || item.type === 'upgrade') {
+            this.showQuantityModal(itemId);
+        } else {
+            this.confirmBuy(itemId, 1);
         }
     },
     
@@ -789,7 +988,6 @@ const game = {
             }
             this.player.inventory[itemId]--;
             this.updatePlayerStats();
-            this.renderInventory();
         }
     },
 
@@ -801,9 +999,27 @@ const game = {
             this.player.gold += item.price;
             this.logMessage(`你賣掉了 ${item.name}，獲得了 ${item.price} 金幣。`, 'reward-msg');
             this.updatePlayerStats();
-            this.renderInventory();
-            this.changeShopTab({currentTarget: document.querySelector('.shop-tab-button.active')}, 'sell');
+            this.changeShopTab({currentTarget: document.querySelector('#shop-tabs .shop-tab-button.active')}, 'sell');
         }
+    },
+    
+    equipItem(itemId) {
+        if (!this.player.inventory[itemId] || this.player.inventory[itemId] <= 0) return;
+
+        const itemToEquip = ITEMS[itemId];
+        const itemType = itemToEquip.type;
+
+        const currentlyEquippedId = this.player.equipment[itemType];
+        
+        this.player.inventory[currentlyEquippedId] = (this.player.inventory[currentlyEquippedId] || 0) + 1;
+
+        this.player.equipment[itemType] = itemId;
+        this.player.inventory[itemId]--;
+        
+        this.logMessage(`你裝備了 ${itemToEquip.name}。`, 'reward-msg');
+        
+        this.updatePlayerStats();
+        this.renderInventoryContent();
     },
 
     startCombat(enemyId, isStoryBoss = false) {
@@ -950,7 +1166,7 @@ const game = {
                     player.buffs.attack = { multiplier: item.value, duration: item.duration + 1 };
                     this.logMessage(`你使用了 ${item.name}，攻擊力大幅提升了！`, 'buff-msg');
                 } else if (item.effect === 'buff_hp') {
-                    if (player.buffs.hp) { // 如果已存在，先移除舊的
+                    if (player.buffs.hp) {
                          player.maxHp -= player.buffs.hp.value;
                     }
                     player.buffs.hp = { value: item.value, duration: item.duration + 1 };
@@ -958,7 +1174,6 @@ const game = {
                     player.hp += item.value;
                     this.logMessage(`你使用了 ${item.name}，暫時提升了生命上限！`, 'buff-msg');
                 }
-                this.renderInventory();
             }
         } else if (type === 'flee') {
             if (Math.random() < 0.7) {
@@ -1022,9 +1237,6 @@ const game = {
                 }
             }
             
-            this.updatePlayerStats();
-            this.renderInventory();
-
             if (enemyData.isBoss) {
                 this.player.defeatedBosses.push(enemyId);
                 this.renderMap();
