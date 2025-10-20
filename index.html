@@ -20,7 +20,7 @@
             --poison-color: #9c27b0;
             --burn-color: #f44336;
             --bleed-color: #c62828;
-            --sleep-color: #1a237e;
+            --sleep-color: #2894FF;
             --ui-font: 'Noto Sans TC', sans-serif;
         }
 
@@ -373,12 +373,48 @@
                 <h3>遊戲選項</h3>
                 <div style="text-align: center;">
                     <button class="game-button" style="width: 90%;" onclick="game.openMenuView('settings-view')">存檔 & 讀檔</button>
-                </div>
+                    <button class="game-button" style="width: 90%; margin-top: 10px;" onclick="game.openMenuView('how-to-play-view')">遊戲說明</button>
+				</div>
             </div>
         </aside>
 
         <!-- ===== 主視圖 ===== -->
         <main id="main-view">
+
+            <div id="how-to-play-view" class="view" style="line-height: 1.8;">
+                <h2 style="text-align: center; color: var(--highlight-color);">遊戲說明</h2>
+                
+                <h3 style="color: var(--highlight-color); border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">基本玩法</h3>
+                <p>你將扮演艾拉公主，在地圖上探索各個區域。在王城，你可以購買裝備和道具。在野外，你將會：</p>
+                <ul style="padding-left: 20px;">
+                    <li><strong>繼續前進：</strong>遭遇隨機事件，可能是遇見怪物，也可能是撿到金幣或道具。</li>
+                    <li><strong>挑戰頭目：</strong>擊敗強大的區域頭目以推進主線故事。</li>
+                </ul>
+    
+                <h3 style="color: var(--highlight-color); border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-top: 20px;">戰鬥系統</h3>
+                <p>戰鬥是回合制的。你的回合有三個選項：</p>
+                <ul style="padding-left: 20px;">
+                    <li><strong>攻擊：</strong>對敵人造成 (你的攻擊力 - 敵人防禦力) 的傷害，有 30% 機率暴擊造成 1.5 倍傷害。</li>
+                    <li><strong>道具：</strong>使用背包中的藥水。你可以在戰鬥中使用恢復藥水、增益藥水 (Buff) 或解除狀態的藥水。</li>
+                    <li><strong>逃跑：</strong>有 70% 機率成功逃離戰鬥（頭目戰無效）。</li>
+                </ul>
+    
+                <h3 style="color: var(--highlight-color); border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-top: 20px;">怪物指南 (非頭目)</h3>
+                <p>你在旅途中會遇到各種敵人，牠們除了攻擊，還可能附帶特殊效果：</p>
+                <ul style="padding-left: 20px;">
+                    <li><strong>迷霧精怪 (森林)：</strong>有 25% 機率使你<strong style="color: var(--sleep-color);">[睡眠]</strong> 3 回合。睡眠狀態下無法行動。</li>
+                    <li><strong>劇毒蜘蛛 (森林)：</strong>有 25% 機率使你<strong style="color: var(--poison-color);">[中毒]</strong> 5 回合，每回合受到 5 點傷害。</li>
+                    <li><strong>山地巨鷹 (山脈)：</strong>有 25% 機率使你<strong style="color: var(--bleed-color);">[流血]</strong> 5 回合，每回合受到 10 點傷害。</li>
+                    <li><strong>岩石傀儡 (山脈)：</strong>有 25% 機率使你<strong style="color: var(--bleed-color);">[流血]</strong> 5 回合，每回合受到 10 點傷害。</li>
+                    <li><strong>熔岩巨魔 (燼火之地)：</strong>有 25% 機率使你<strong style="color: var(--burn-color);">[燒傷]</strong> 5 回合，每回合受到 15 點傷害。</li>
+                    <li><strong>灰燼惡犬 (燼火之地)：</strong>有 25% 機率使你<strong style="color: var(--burn-color);">[燒傷]</strong> 5 回合，每回合受到 15 點傷害。</li>
+                </ul>
+                <p><em>提示：你可以在王城商店購買各種「解狀態藥水」來應對這些威脅。</em></p>
+    
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="game-button" onclick="game.returnToPreviousView()">返回</button>
+                </div>
+            </div>
             <!-- 故事/劇情視圖 -->
             <div id="story-view" class="view">
                 <h2 id="story-title"></h2>
@@ -710,7 +746,7 @@ const game = {
         newGameBtn.textContent = '新遊戲';
         newGameBtn.onclick = () => this.init(true);
         optionsContainer.appendChild(newGameBtn);
-
+		
         this.changeView('story-view');
     },
 
@@ -987,7 +1023,7 @@ const game = {
         this.renderItemInventoryContent();
     },
     
-    renderItemInventoryContent() {
+renderItemInventoryContent() {
         const list = document.getElementById('item-inventory-item-list');
         list.innerHTML = '';
         let hasItems = false;
@@ -1004,12 +1040,37 @@ const game = {
                     hasItems = true;
                     const li = document.createElement('li');
                     li.className = 'shop-item';
+                    
                     let statsText = item.description || '';
                     let useButton = '';
-                     if (item.effect === 'heal' || item.effect === 'heal_full') {
-                        statsText = item.effect === 'heal' ? `恢復 ${item.value} HP` : `恢復所有 HP`;
-                        useButton = `<button class="game-button" onclick="game.useItemOutOfCombat('${itemId}')">使用</button>`;
-                     }
+
+                    // --- 這是修改後的新邏輯 ---
+                    if (item.type === 'potion') {
+                        // 1. 產生所有藥水的描述文字
+                        if (item.effect === 'heal') statsText = `恢復 ${item.value} HP`;
+                        else if (item.effect === 'heal_full') statsText = `恢復所有 HP`;
+                        else if (item.effect === 'buff_atk') statsText = `攻擊 x${item.value} (${item.duration}回合)`;
+                        else if (item.effect === 'buff_hp') statsText = `生命上限+${item.value} (${item.duration}回合)`;
+                        else if (item.effect === 'cure') statsText = `解除 ${item.value === 'poison' ? '中毒' : item.value === 'burn' ? '燒傷' : item.value === 'bleed' ? '流血' : '睡眠'} 狀態`;
+                        
+                        // 2. 根據當前是否在戰鬥中，決定按鈕的功能
+                        let action = '';
+                        if (this.viewReturnPath === 'combat-view') {
+                            // 在戰鬥中：所有藥水都可以使用
+                            action = `game.combatAction('use_item', '${itemId}')`;
+                        } else {
+                            // 非戰鬥中：只有治療藥水可以使用
+                            if (item.effect.includes('heal')) {
+                                action = `game.useItemOutOfCombat('${itemId}')`;
+                            }
+                        }
+                        
+                        // 3. 如果有可執行的動作，才建立按鈕
+                        if (action) {
+                            useButton = `<button class="game-button" onclick="${action}">使用</button>`;
+                        }
+                    }
+                    // --- 邏輯修改結束 ---
                     
                     li.innerHTML = `
                         <div>
