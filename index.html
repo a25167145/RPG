@@ -17,6 +17,10 @@
             --danger-color: #ff6b6b;
             --success-color: #6bff9b;
             --buff-color: #82aaff;
+            --poison-color: #9c27b0;
+            --burn-color: #f44336;
+            --bleed-color: #c62828;
+            --sleep-color: #1a237e;
             --ui-font: 'Noto Sans TC', sans-serif;
         }
 
@@ -37,7 +41,7 @@
         #game-container {
             width: 100%;
             max-width: 1000px;
-            height: 600px;
+            height: 800px;
             background-color: var(--panel-bg);
             border: 2px solid var(--border-color);
             border-radius: 12px;
@@ -47,7 +51,7 @@
             grid-template-rows: 1fr 150px;
             grid-template-areas:
                 "sidebar main"
-                "sidebar messages";
+                "sidebar messages-container";
             gap: 15px;
             padding: 15px;
             box-sizing: border-box;
@@ -111,22 +115,41 @@
         .view.active { display: block; }
 
         /* --- 訊息日誌 --- */
-        #message-log {
-            grid-area: messages;
+        #messages-container {
+            grid-area: messages-container;
+            display: flex;
+            gap: 15px;
+        }
+        .log-panel {
+            flex: 1;
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 15px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .log-panel h3 {
+            margin: 0 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 1em;
+            text-align: center;
+            color: var(--highlight-color);
+        }
+        .log-window {
+            flex-grow: 1;
             overflow-y: auto;
             font-size: 0.9em;
             line-height: 1.6;
         }
-        #message-log p { margin: 0 0 5px 0; }
+        .log-window p { margin: 0 0 5px 0; }
         .combat-msg { color: #ff9999; }
         .crit-msg { color: #ffc107; font-weight: bold; }
         .reward-msg { color: var(--success-color); }
         .story-msg { color: #aaddff; font-style: italic; }
         .buff-msg { color: var(--buff-color); }
+        .danger-msg { color: var(--danger-color); }
 
 
         /* --- 通用按鈕樣式 --- */
@@ -147,17 +170,18 @@
         .game-button:disabled { background-color: #333; color: #777; cursor: not-allowed; }
 
         /* --- 地圖視圖 --- */
-        #map-view h2 { text-align: center; color: var(--highlight-color); }
+        #map-view h2, #region-view h2 { text-align: center; color: var(--highlight-color); }
         #map-locations {
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             justify-content: center;
-            align-items: center;
-            gap: 15px;
+            align-items: flex-start;
+            gap: 20px;
             margin-top: 20px;
         }
         .location-container {
             display: flex;
+            flex-direction: column;
             gap: 10px;
             align-items: center;
         }
@@ -167,17 +191,17 @@
             text-align: center;
         }
         .boss-button {
-            width: 120px;
-            height: 60px;
+            width: 100px;
+            height: 45px;
             background-color: var(--danger-color);
         }
         .boss-button:hover {
             background-color: #c14d4d;
         }
 
-        /* --- 商店/背包視圖 --- */
-        #shop-view, #inventory-view, #item-inventory-view { display: none; flex-direction: column; }
-        #shop-view.active, #inventory-view.active, #item-inventory-view.active { display: flex; }
+        /* --- 商店/背包/設定視圖 --- */
+        #shop-view, #inventory-view, #item-inventory-view, #settings-view, #region-view { display: none; flex-direction: column; }
+        #shop-view.active, #inventory-view.active, #item-inventory-view.active, #settings-view.active, #region-view.active { display: flex; }
         #shop-tabs, #inventory-tabs, #item-inventory-tabs {
             display: flex;
             justify-content: center;
@@ -195,20 +219,28 @@
             flex-grow: 1;
             overflow-y: auto;
         }
-        #shop-item-list, #inventory-item-list, #item-inventory-item-list {
+        #shop-item-list, #inventory-item-list, #item-inventory-item-list, #save-slots-list {
             list-style: none;
             padding: 0;
         }
-        .shop-item {
+        .shop-item, .save-slot {
             display: grid;
-            grid-template-columns: 1fr 1fr 80px;
             gap: 10px;
             align-items: center;
             padding: 10px;
             border-bottom: 1px solid var(--border-color);
         }
-        .shop-item:hover { background-color: rgba(255,255,255,0.05); }
-        .item-info { font-size: 0.8em; color: #b0aec7; }
+        .save-slot {
+             grid-template-columns: 1fr auto;
+        }
+        .shop-item {
+             grid-template-columns: 1fr 1fr 80px;
+        }
+        .shop-item:hover, .save-slot:hover { background-color: rgba(255,255,255,0.05); }
+        .item-info, .slot-info { font-size: 0.9em; }
+        .slot-info small { color: #b0aec7; font-size: 0.8em; }
+        .slot-actions .game-button { margin: 0 2px; padding: 5px 10px; font-size: 0.9em;}
+
 
         /* --- 戰鬥視圖 --- */
         #combat-view { text-align: center; }
@@ -229,6 +261,15 @@
         }
         .participant-name { font-size: 1.2em; font-weight: bold; }
         .participant-hp { background: #222; padding: 2px 8px; border-radius: 5px; font-size: 0.9em; margin-top: 5px; }
+        .participant-status {
+            font-size: 0.8em;
+            height: 1.2em;
+            margin-top: 4px;
+        }
+        .status-poison { color: var(--poison-color); font-weight: bold; }
+        .status-burn { color: var(--burn-color); font-weight: bold; }
+        .status-bleed { color: var(--bleed-color); font-weight: bold; }
+        .status-sleep { color: var(--sleep-color); font-weight: bold; }
         .hp-bar {
             width: 100px;
             height: 10px;
@@ -319,13 +360,19 @@
                     <li><span>護甲</span> <span id="equip-armor"></span></li>
                 </ul>
                 <div style="text-align: center; margin-top: 10px;">
-                    <button class="game-button" style="width: 90%;" onclick="game.changeView('inventory-view')">管理裝備</button>
+                    <button class="game-button" style="width: 90%;" onclick="game.openMenuView('inventory-view')">管理裝備</button>
                 </div>
             </div>
             <div id="inventory-panel" class="sidebar-panel">
                  <h3>道具欄</h3>
                  <div style="text-align: center; margin-top: 10px;">
-                    <button class="game-button" style="width: 90%;" onclick="game.changeView('item-inventory-view')">管理道具</button>
+                    <button class="game-button" style="width: 90%;" onclick="game.openMenuView('item-inventory-view')">管理道具</button>
+                </div>
+            </div>
+            <div id="game-options-panel" class="sidebar-panel">
+                <h3>遊戲選項</h3>
+                <div style="text-align: center;">
+                    <button class="game-button" style="width: 90%;" onclick="game.openMenuView('settings-view')">存檔 & 讀檔</button>
                 </div>
             </div>
         </aside>
@@ -342,8 +389,16 @@
             <!-- 地圖視圖 -->
             <div id="map-view" class="view">
                 <h2>世界地圖</h2>
-                <p style="text-align: center;">選擇你要前往的地點。</p>
+                <p style="text-align: center;">選擇你要前往的地區。</p>
                 <div id="map-locations"></div>
+            </div>
+
+            <!-- 關卡內地圖視圖 -->
+            <div id="region-view" class="view">
+                <h2 id="region-title"></h2>
+                <div id="region-actions" style="text-align: center; margin-top: 50px;">
+                    <!-- Buttons will be generated here -->
+                </div>
             </div>
 
             <!-- 商店視圖 -->
@@ -373,7 +428,7 @@
                     <ul id="inventory-item-list"></ul>
                 </div>
                 <div style="text-align: center; margin-top: auto;">
-                    <button class="game-button" onclick="game.changeView('map-view')">返回地圖</button>
+                    <button class="game-button" onclick="game.returnToPreviousView()">返回</button>
                 </div>
             </div>
 
@@ -389,7 +444,16 @@
                     <ul id="item-inventory-item-list"></ul>
                 </div>
                 <div style="text-align: center; margin-top: auto;">
-                    <button class="game-button" onclick="game.changeView('map-view')">返回地圖</button>
+                    <button id="item-inventory-back-button" class="game-button" onclick="game.returnToPreviousView()">返回</button>
+                </div>
+            </div>
+
+            <!-- 設定視圖 -->
+            <div id="settings-view" class="view">
+                <h2>存檔 & 讀檔</h2>
+                 <ul id="save-slots-list"></ul>
+                <div style="text-align: center; margin-top: auto;">
+                    <button class="game-button" onclick="game.returnToPreviousView()">返回</button>
                 </div>
             </div>
 
@@ -401,6 +465,7 @@
                     <div class="participant">
                         <div class="participant-name">艾拉公主</div>
                         <div class="participant-hp" id="combat-player-hp"></div>
+                        <div class="participant-status" id="combat-player-status"></div>
                         <div class="hp-bar"><div class="hp-bar-inner" id="combat-player-hp-bar"></div></div>
                         <img src="https://cdn.jsdelivr.net/gh/a25167145/RPG@main/pri.png" alt="艾拉公主">
                     </div>
@@ -408,6 +473,7 @@
                     <div class="participant">
                         <div class="participant-name" id="combat-enemy-name"></div>
                         <div class="participant-hp" id="combat-enemy-hp"></div>
+                        <div class="participant-status"></div>
                         <div class="hp-bar"><div class="hp-bar-inner" id="combat-enemy-hp-bar"></div></div>
                         <img id="combat-enemy-img" src="" alt="敵人">
                     </div>
@@ -418,7 +484,16 @@
         </main>
 
         <!-- ===== 訊息日誌 ===== -->
-        <div id="message-log"></div>
+        <div id="messages-container">
+            <div class="log-panel">
+                <h3>故事日誌</h3>
+                <div id="story-log" class="log-window"></div>
+            </div>
+            <div class="log-panel">
+                <h3>戰鬥紀錄</h3>
+                <div id="combat-log" class="log-window"></div>
+            </div>
+        </div>
     </div>
 
     <!-- 數量選擇 Modal -->
@@ -455,6 +530,9 @@ const ITEMS = {
     'p01_full': { name: '聖光藥水', type: 'potion', effect: 'heal_full', value: 9999, price: 500 },
     'b01': { name: '力量藥水', type: 'potion', effect: 'buff_atk', value: 1.5, duration: 3, price: 80 },
     'b02': { name: '活力藥水', type: 'potion', effect: 'buff_hp', value: 50, duration: 5, price: 100 },
+    'c01': { name: '解毒藥水', type: 'potion', effect: 'cure', value: 'poison', price: 50 },
+    'c02': { name: '解燒傷藥水', type: 'potion', effect: 'cure', value: 'burn', price: 60 },
+    'c03': { name: '止血藥水', type: 'potion', effect: 'cure', value: 'bleed', price: 60 },
     'u01': { name: '生命之露', type: 'upgrade', effect: 'perm_hp', value: 10, price: 400 },
     'u02': { name: '生命之泉', type: 'upgrade', effect: 'perm_hp', value: 25, price: 1000 },
     'p02': { name: '靜心草', type: 'quest', description: '森林隱士贈與的藥草，似乎能讓人保持頭腦清晰。' },
@@ -463,7 +541,7 @@ const ITEMS = {
     'm02': { name: '純淨精華', type: 'material', price: 50 },
     'm03': { name: '蜘蛛絲', type: 'material', price: 8 },
     'm04': { name: '劇毒毒囊', type: 'material', price: 45 },
-    'm05': { name: '獅鷲的羽毛', type: 'material', price: 30 },
+    'm05': { name: '巨鷹的羽毛', type: 'material', price: 30 },
     'm06': { name: '風之結晶', type: 'material', price: 120 },
     'm07': { name: '熔岩碎塊', type: 'material', price: 40 },
     'm08': { name: '火焰之心', type: 'material', price: 180 },
@@ -474,18 +552,35 @@ const ITEMS = {
 
 const ENEMIES = {
     // 一般怪物
-    'mist_spirit': { name: '迷霧精怪', hp: 50, attack: 12, defense: 4, gold: 20, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M1.png', drops: { common: { id: 'm01', chance: 0.7 }, rare: { id: 'm02', chance: 0.15 } } },
-    'poison_spider': { name: '劇毒蜘蛛', hp: 70, attack: 18, defense: 6, gold: 35, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M2.png', drops: { common: { id: 'm03', chance: 0.8 }, rare: { id: 'm04', chance: 0.2 } } },
-    'mountain_roc': { name: '山地巨鷹', hp: 120, attack: 25, defense: 8, gold: 60, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M4.png', drops: { common: { id: 'm05', chance: 0.8 }, rare: { id: 'm06', chance: 0.15 } } },
-    'rock_golem': { name: '岩石傀儡', hp: 180, attack: 20, defense: 18, gold: 80, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M3.png', drops: { common: { id: 'm09', chance: 0.9 }, rare: { id: 'm10', chance: 0.1 } } },
-    'lava_troll': { name: '熔岩巨魔', hp: 200, attack: 35, defense: 18, gold: 150, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M6.png', drops: { common: { id: 'm07', chance: 0.9 }, rare: { id: 'm08', chance: 0.25 } } },
-    'ash_hound': { name: '灰燼惡犬', hp: 160, attack: 40, defense: 12, gold: 120, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M5.png', drops: { common: { id: 'm11', chance: 0.7 }, rare: { id: 'm08', chance: 0.1 } } },
+    'mist_spirit': { name: '迷霧精怪', hp: 50, attack: 12, defense: 4, gold: 20, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M1.png', statusEffect: { type: 'sleep', chance: 0.25, duration: 3 }, drops: { common: { id: 'm01', chance: 0.7 }, rare: { id: 'm02', chance: 0.15 } } },
+    'poison_spider': { name: '劇毒蜘蛛', hp: 70, attack: 18, defense: 6, gold: 35, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M2.png', statusEffect: { type: 'poison', chance: 0.25, damage: 5, duration: 5 }, drops: { common: { id: 'm03', chance: 0.8 }, rare: { id: 'm04', chance: 0.2 } } },
+    'mountain_roc': { name: '山地巨鷹', hp: 120, attack: 25, defense: 8, gold: 60, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M4.png', statusEffect: { type: 'bleed', chance: 0.25, damage: 10, duration: 5 }, drops: { common: { id: 'm05', chance: 0.8 }, rare: { id: 'm06', chance: 0.15 } } },
+    'rock_golem': { name: '岩石傀儡', hp: 180, attack: 20, defense: 18, gold: 80, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M3.png', statusEffect: { type: 'bleed', chance: 0.25, damage: 10, duration: 5 }, drops: { common: { id: 'm09', chance: 0.9 }, rare: { id: 'm10', chance: 0.1 } } },
+    'lava_troll': { name: '熔岩巨魔', hp: 200, attack: 35, defense: 18, gold: 150, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M6.png', statusEffect: { type: 'burn', chance: 0.25, damage: 15, duration: 5 }, drops: { common: { id: 'm07', chance: 0.9 }, rare: { id: 'm08', chance: 0.25 } } },
+    'ash_hound': { name: '灰燼惡犬', hp: 160, attack: 40, defense: 12, gold: 120, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/M5.png', statusEffect: { type: 'burn', chance: 0.25, damage: 15, duration: 5 }, drops: { common: { id: 'm11', chance: 0.7 }, rare: { id: 'm08', chance: 0.1 } } },
     // 區域頭目
-    'forest_guardian': { name: '遠古樹精', hp: 250, attack: 22, defense: 10, gold: 200, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/B1.png', drops: { common: { id: 'm02', chance: 1.0 }, rare: { id: 'u01', chance: 1.0 } } },
-    'griffin': { name: '兇猛的獅鷲', hp: 350, attack: 32, defense: 15, gold: 300, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/B2.png', drops: { common: { id: 'm06', chance: 1.0 }, rare: { id: 'u01', chance: 1.0 } } },
-    'wasteland_tyrant': { name: '燼火暴君', hp: 500, attack: 42, defense: 20, gold: 500, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/B3.png', drops: { common: { id: 'm08', chance: 1.0 }, rare: { id: 'u02', chance: 1.0 } } },
+    'forest_guardian': { name: '遠古樹精', hp: 250, attack: 22, defense: 10, gold: 200, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/B1.png', statusEffect: { type: 'sleep', chance: 0.25, duration: 3 }, drops: { common: { id: 'm02', chance: 1.0 }, rare: { id: 'u01', chance: 1.0 } } },
+    'griffin': { name: '兇猛的獅鷲', hp: 350, attack: 32, defense: 15, gold: 300, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/B2.png', statusEffect: { type: 'bleed', chance: 0.25, damage: 10, duration: 5 }, drops: { common: { id: 'm06', chance: 1.0 }, rare: { id: 'u01', chance: 1.0 } } },
+    'wasteland_tyrant': { name: '燼火暴君', hp: 500, attack: 42, defense: 20, gold: 500, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/B3.png', statusEffect: { type: 'burn', chance: 0.25, damage: 15, duration: 5 }, drops: { common: { id: 'm08', chance: 1.0 }, rare: { id: 'u02', chance: 1.0 } } },
     // 最終頭目
-    'boss': { name: '凱蘭爵士', hp: 800, attack: 50, defense: 25, gold: 0, isBoss: true, img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/BOSS.png' }
+    'boss': { 
+        name: '凱蘭爵士', 
+        hp: 800, 
+        attack: 50, 
+        defense: 25, 
+        gold: 0, 
+        isBoss: true, 
+        img: 'https://cdn.jsdelivr.net/gh/a25167145/RPG@main/BOSS.png',
+        multiStatusEffect: {
+            chance: 0.25,
+            effects: [
+                { type: 'poison', damage: 5, duration: 5 },
+                { type: 'burn', damage: 15, duration: 5 },
+                { type: 'bleed', damage: 10, duration: 5 },
+                { type: 'sleep', duration: 3 }
+            ]
+        }
+    }
 };
 
 const LOCATIONS = {
@@ -515,8 +610,8 @@ const STORY = {
             action: () => {
                 game.storyProgress = 's3_forest_hermit_met';
                 game.player.inventory['p02'] = (game.player.inventory['p02'] || 0) + 1;
-                game.logMessage('你獲得了「靜心草」。', 'reward-msg');
-                game.logMessage('妳將草藥師的話銘記在心，繼續在低語森林中探索。', 'story-msg');
+                game.logMessage('你獲得了「靜心草」。', 'reward-msg', 'story');
+                game.logMessage('妳將草藥師的話銘記在心，繼續在低語森林中探索。', 'story-msg', 'story');
                 game.renderMap();
                 game.changeView('map-view');
             }
@@ -534,18 +629,21 @@ const STORY = {
     },
     's6_peak_unlocked': {
          title: '前往龍穴',
-         text: '妳穿越了危險的燼火之地，終於抵達了燼火之巔。巨大的龍穴入口就在眼前，熾熱的空氣迎面撲來。',
+         text: '妳擊敗了燼火之地的暴君，終於抵達了燼火之巔。巨大的龍穴入口就在眼前，熾熱的空氣迎面撲來。',
          options: [{ text: '使用「靜心草」後進入', action: () => game.advanceStory('s7_final_confrontation') }]
     },
     's7_final_confrontation': {
         title: '第六章：虛偽的英雄',
         text: `在龍穴深處，妳看到了安然無恙的凱蘭，以及在他對面嗚咽的巨龍伊格娜。巢穴中，破碎的龍蛋揭示了殘酷的真相。\n「我當著牠的面，親手毀了牠的希望！」凱蘭狂笑著，「歷史是由勝利者書寫的！」`,
-        options: [{ text: '舉起弓，對準真正的怪物', action: () => game.startCombat('boss', true) }]
+        options: [
+            { text: '舉起弓，對準真正的怪物', action: () => game.startCombat('boss', true) },
+            { text: '（在開戰前整備道具）', action: () => game.openMenuView('item-inventory-view') }
+        ]
     },
     's8_ending': {
         title: '終章：女王與巨龍的悲歌',
         text: `妳擊敗了墮落的英雄，帶回了真相。數年後，妳加冕為王，被尊稱為「真理女王」艾拉。\n一個新的傳說開始流傳，關於一位女王，一頭巨龍，和一份用真相與鮮血鑄就的、沉重的羈絆。\n\n【真實結局】`,
-        options: [{ text: '重新開始遊戲', action: () => game.init() }]
+        options: [{ text: '重新開始遊戲', action: () => { game.deleteAllSaves(); game.init(true); } }]
     }
 };
 
@@ -558,8 +656,19 @@ const game = {
     currentShopTab: 'weapon',
     currentInventoryTab: 'weapon',
     currentItemInventoryTab: 'potion',
+    viewReturnPath: 'map-view',
+    saveKey: 'elaraRPGSaveSlots',
+    currentRegionId: null,
 
-    init() {
+    init(forceNew = false) {
+        const savedSlotsJSON = localStorage.getItem(this.saveKey);
+        const hasSave = savedSlotsJSON && JSON.parse(savedSlotsJSON).some(slot => slot !== null);
+
+        if (!forceNew && hasSave) {
+            this.showStartOptions();
+            return;
+        }
+
         this.player = {
             maxHp: 100,
             hp: 100,
@@ -575,8 +684,122 @@ const game = {
         };
         this.storyProgress = 's0_start';
         this.updatePlayerStats();
-        this.logMessage("歡迎來到《艾拉女王與悲慟之火的悲歌》", "story-msg");
+        this.logMessage("歡迎來到《艾拉女王與悲慟之火的悲歌》", "story-msg", 'story');
         this.advanceStory('s0_start');
+    },
+    
+    showStartOptions() {
+        this.storyProgress = 's0_start';
+        document.getElementById('story-title').textContent = "艾拉女王與悲慟之火的悲歌";
+        document.getElementById('story-text').textContent = "偵測到先前的遊戲進度。";
+        
+        const optionsContainer = document.getElementById('story-options');
+        optionsContainer.innerHTML = '';
+        
+        const continueBtn = document.createElement('button');
+        continueBtn.className = 'game-button';
+        continueBtn.textContent = '繼續遊戲';
+        continueBtn.onclick = () => {
+            this.viewReturnPath = 'story-view';
+            this.changeView('settings-view');
+        };
+        optionsContainer.appendChild(continueBtn);
+
+        const newGameBtn = document.createElement('button');
+        newGameBtn.className = 'game-button';
+        newGameBtn.textContent = '新遊戲';
+        newGameBtn.onclick = () => this.init(true);
+        optionsContainer.appendChild(newGameBtn);
+
+        this.changeView('story-view');
+    },
+
+    saveGame(slotIndex) {
+        let saveSlots = JSON.parse(localStorage.getItem(this.saveKey)) || [null, null, null];
+        
+        const gameState = {
+            player: this.player,
+            storyProgress: this.storyProgress,
+            saveTime: new Date().toLocaleString('zh-TW')
+        };
+        
+        saveSlots[slotIndex] = gameState;
+        localStorage.setItem(this.saveKey, JSON.stringify(saveSlots));
+        this.logMessage(`遊戲進度已儲存至欄位 ${slotIndex + 1}。`, 'reward-msg', 'story');
+        this.renderSaveSlots();
+    },
+
+    loadGame(slotIndex) {
+        const saveSlots = JSON.parse(localStorage.getItem(this.saveKey));
+        if (saveSlots && saveSlots[slotIndex]) {
+            const savedState = saveSlots[slotIndex];
+            this.player = savedState.player;
+            this.storyProgress = savedState.storyProgress;
+
+            this.updatePlayerStats();
+            this.renderMap();
+            this.logMessage(`從欄位 ${slotIndex + 1} 讀取進度。`, 'reward-msg', 'story');
+            this.changeView('map-view');
+        } else {
+            this.logMessage(`欄位 ${slotIndex + 1} 沒有存檔。`, 'danger-msg', 'story');
+        }
+    },
+
+    deleteSave(slotIndex) {
+        let saveSlots = JSON.parse(localStorage.getItem(this.saveKey)) || [null, null, null];
+        if (saveSlots[slotIndex]) {
+            saveSlots[slotIndex] = null;
+            localStorage.setItem(this.saveKey, JSON.stringify(saveSlots));
+            this.logMessage(`欄位 ${slotIndex + 1} 的存檔已刪除。`, '', 'story');
+            this.renderSaveSlots();
+        }
+    },
+    
+    deleteAllSaves() {
+        localStorage.removeItem(this.saveKey);
+        this.logMessage('所有存檔已刪除。', '', 'story');
+    },
+
+    renderSaveSlots() {
+        const list = document.getElementById('save-slots-list');
+        list.innerHTML = '';
+        const saveSlots = JSON.parse(localStorage.getItem(this.saveKey)) || [null, null, null];
+
+        for (let i = 0; i < 3; i++) {
+            const slotData = saveSlots[i];
+            const li = document.createElement('li');
+            li.className = 'save-slot';
+            
+            let infoHTML = '';
+            let actionsHTML = '';
+
+            if (slotData) {
+                const storyTitle = STORY[slotData.storyProgress] ? STORY[slotData.storyProgress].title : "未知進度";
+                infoHTML = `
+                    <div class="slot-info">
+                        <strong>欄位 ${i + 1}</strong><br>
+                        <small>${storyTitle}</small><br>
+                        <small>金幣: ${slotData.player.gold} | ${slotData.saveTime}</small>
+                    </div>
+                `;
+                actionsHTML = `
+                    <div class="slot-actions">
+                        <button class="game-button" onclick="game.saveGame(${i})">覆寫</button>
+                        <button class="game-button" onclick="game.loadGame(${i})">讀取</button>
+                        <button class="game-button" onclick="game.deleteSave(${i})">刪除</button>
+                    </div>
+                `;
+            } else {
+                infoHTML = `<div class="slot-info"><strong>欄位 ${i + 1}</strong><br><small>[ 空白存檔 ]</small></div>`;
+                actionsHTML = `
+                    <div class="slot-actions">
+                        <button class="game-button" onclick="game.saveGame(${i})">儲存</button>
+                    </div>
+                `;
+            }
+            li.innerHTML = infoHTML + actionsHTML;
+            list.appendChild(li);
+        }
     },
 
     updatePlayerStats() {
@@ -618,15 +841,7 @@ const game = {
                 
                 button.onclick = () => this.travel(locId);
                 div.appendChild(button);
-
-                if (loc.boss && !this.player.defeatedBosses.includes(loc.boss) && loc.boss !== 'boss') {
-                     const bossButton = document.createElement('button');
-                     bossButton.className = 'game-button boss-button';
-                     bossButton.textContent = '挑戰頭目';
-                     bossButton.onclick = () => this.startCombat(loc.boss, true);
-                     div.appendChild(bossButton);
-                }
-                container.appendChild(div);
+				container.appendChild(div);
             }
         }
     },
@@ -693,6 +908,7 @@ const game = {
                     else if (item.effect === 'buff_atk') statsText = `攻擊 x${item.value} (${item.duration}回合)`;
                     else if (item.effect === 'buff_hp') statsText = `生命上限+${item.value} (${item.duration}回合)`;
                     else if (item.effect === 'perm_hp') statsText = `永久生命上限 +${item.value}`;
+                    else if (item.effect === 'cure') statsText = `解除 ${item.value === 'poison' ? '中毒' : item.value === 'burn' ? '燒傷' : item.value === 'bleed' ? '流血' : '睡眠'} 狀態`;
 
                     li.innerHTML = `
                         <div>
@@ -776,11 +992,11 @@ const game = {
                     const li = document.createElement('li');
                     li.className = 'shop-item';
                     let statsText = item.description || '';
-                     if (item.effect === 'heal') statsText = `恢復 ${item.value} HP`;
-                    else if (item.effect === 'heal_full') statsText = `恢復所有 HP`;
-                    else if (item.effect === 'buff_atk') statsText = `攻擊 x${item.value} (${item.duration}回合)`;
-                    else if (item.effect === 'buff_hp') statsText = `生命上限+${item.value} (${item.duration}回合)`;
-                    else if (item.effect === 'perm_hp') statsText = `永久生命上限 +${item.value}`;
+                    let useButton = '';
+                     if (item.effect === 'heal' || item.effect === 'heal_full') {
+                        statsText = item.effect === 'heal' ? `恢復 ${item.value} HP` : `恢復所有 HP`;
+                        useButton = `<button class="game-button" onclick="game.useItemOutOfCombat('${itemId}')">使用</button>`;
+                     }
                     
                     li.innerHTML = `
                         <div>
@@ -788,7 +1004,7 @@ const game = {
                              <div class="item-info">${statsText}</div>
                         </div>
                         <div></div>
-                        <div></div>
+                        <div>${useButton}</div>
                     `;
                     list.appendChild(li);
                 }
@@ -799,8 +1015,9 @@ const game = {
         }
     },
 
-    logMessage(text, className = '') {
-        const log = document.getElementById('message-log');
+    logMessage(text, className = '', logType = 'story') {
+        const logId = logType === 'combat' ? 'combat-log' : 'story-log';
+        const log = document.getElementById(logId);
         const p = document.createElement('p');
         p.textContent = text;
         if (className) p.className = className;
@@ -808,10 +1025,10 @@ const game = {
     },
 
     changeView(viewId) {
-        if (this.currentView.includes('shop') || this.currentView.includes('inventory')) {
-             document.getElementById('shop-item-list').innerHTML = '';
-             document.getElementById('inventory-item-list').innerHTML = '';
-             document.getElementById('item-inventory-item-list').innerHTML = '';
+        if (this.currentView.includes('shop') || this.currentView.includes('inventory') || this.currentView.includes('settings')) {
+             if(document.getElementById('shop-item-list')) document.getElementById('shop-item-list').innerHTML = '';
+             if(document.getElementById('inventory-item-list')) document.getElementById('inventory-item-list').innerHTML = '';
+             if(document.getElementById('item-inventory-item-list')) document.getElementById('item-inventory-item-list').innerHTML = '';
         }
 
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -836,6 +1053,9 @@ const game = {
                 this.changeItemInventoryTab({currentTarget: firstTab}, 'potion');
             }
         }
+        if (viewId === 'settings-view') {
+            this.renderSaveSlots();
+        }
     },
     
     advanceStory(storyKey) {
@@ -846,7 +1066,7 @@ const game = {
         if (storyKey === 's7_final_confrontation') {
              if (this.player.inventory['p02'] > 0) {
                 this.player.inventory['p02']--;
-                this.logMessage('你使用了「靜心草」，混亂的思緒為之一清。');
+                this.logMessage('你使用了「靜心草」，混亂的思緒為之一清。', '', 'story');
              }
         }
 
@@ -867,24 +1087,57 @@ const game = {
     },
 
     travel(locId) {
+        if (locId === 'city') {
+            this.changeView('shop-view');
+            return;
+        }
+
         const loc = LOCATIONS[locId];
-        this.logMessage(`你來到了 ${loc.name}。`);
+        this.logMessage(`你已進入 ${loc.name}。`, '', 'story');
         
         if(locId === 'forest' && this.storyProgress === 's1_journey_start') {
             this.advanceStory('s2_forest_hermit');
             return;
         }
         
-        if(locId === 'peak' && this.storyProgress >= 's6_peak_unlocked') {
+        if(locId === 'peak' && this.storyProgress === 's6_peak_unlocked') {
             this.advanceStory('s7_final_confrontation');
             return;
         }
+        this.currentRegionId = locId;
+        this.renderRegion(locId);
+        this.changeView('region-view');
+    },
 
-        if (loc.actions && loc.actions.includes('shop')) {
-            this.changeView('shop-view');
-            return;
+    renderRegion(locId) {
+        const loc = LOCATIONS[locId];
+        document.getElementById('region-title').textContent = loc.name;
+        const actionsContainer = document.getElementById('region-actions');
+        actionsContainer.innerHTML = '';
+
+        const exploreBtn = document.createElement('button');
+        exploreBtn.className = 'game-button';
+        exploreBtn.textContent = '繼續前進';
+        actionsContainer.appendChild(exploreBtn);
+        exploreBtn.onclick = () => this.exploreRegion(locId);
+
+        if (loc.boss && !this.player.defeatedBosses.includes(loc.boss)) {
+            const bossBtn = document.createElement('button');
+            bossBtn.className = 'game-button boss-button';
+            bossBtn.textContent = '挑戰頭目';
+            actionsContainer.appendChild(bossBtn);
+            bossBtn.onclick = () => this.startCombat(loc.boss, true);
         }
 
+        const leaveBtn = document.createElement('button');
+        leaveBtn.className = 'game-button';
+        leaveBtn.textContent = '離開此地';
+        actionsContainer.appendChild(leaveBtn);
+        leaveBtn.onclick = () => this.changeView('map-view');
+    },
+
+    exploreRegion(locId) {
+        const loc = LOCATIONS[locId];
         if (loc.encounters.length > 0) {
             if (Math.random() < 0.8) {
                 const enemyId = loc.encounters[Math.floor(Math.random() * loc.encounters.length)];
@@ -893,18 +1146,17 @@ const game = {
                  if (Math.random() < 0.6) {
                     const foundGold = 10 + Math.floor(Math.random() * 16);
                     this.player.gold += foundGold;
-                    this.logMessage(`你在路上發現了一個錢袋，裡面有 ${foundGold} 枚金幣。`, 'reward-msg');
+                    this.logMessage(`你在路上發現了一個錢袋，裡面有 ${foundGold} 枚金幣。`, 'reward-msg', 'story');
                     this.updatePlayerStats();
                 } else {
                     const foundItemId = 'p01_low';
                     const foundItem = ITEMS[foundItemId];
                     this.player.inventory[foundItemId] = (this.player.inventory[foundItemId] || 0) + 1;
-                    this.logMessage(`你在一個箱子裡找到了一瓶 ${foundItem.name}。`, 'reward-msg');
+                    this.logMessage(`你在一個箱子裡找到了一瓶 ${foundItem.name}。`, 'reward-msg', 'story');
                 }
-                this.changeView('map-view');
             }
         } else {
-             this.changeView('map-view');
+            this.logMessage('這裡似乎很平靜...', '', 'story');
         }
     },
 
@@ -961,11 +1213,11 @@ const game = {
                 this.player.equipment[item.type] = itemId;
             }
 
-            this.logMessage(`你購買了 ${item.name} x${quantity}。`, 'reward-msg');
+            this.logMessage(`你購買了 ${item.name} x${quantity}。`, 'reward-msg', 'story');
             this.updatePlayerStats();
             if (this.currentView === 'shop-view') this.renderShopContent();
         } else {
-            this.logMessage('你的金幣不夠！');
+            this.logMessage('你的金幣不夠！', '', 'story');
         }
     },
     
@@ -984,7 +1236,7 @@ const game = {
             if (item.effect === 'perm_hp') {
                 this.player.maxHp += item.value;
                 this.player.hp += item.value; 
-                this.logMessage(`你的生命上限永久提升了 ${item.value}！`, 'reward-msg');
+                this.logMessage(`你的生命上限永久提升了 ${item.value}！`, 'reward-msg', 'story');
             }
             this.player.inventory[itemId]--;
             this.updatePlayerStats();
@@ -997,7 +1249,7 @@ const game = {
             const item = ITEMS[itemId];
             this.player.inventory[itemId]--;
             this.player.gold += item.price;
-            this.logMessage(`你賣掉了 ${item.name}，獲得了 ${item.price} 金幣。`, 'reward-msg');
+            this.logMessage(`你賣掉了 ${item.name}，獲得了 ${item.price} 金幣。`, 'reward-msg', 'story');
             this.updatePlayerStats();
             this.changeShopTab({currentTarget: document.querySelector('#shop-tabs .shop-tab-button.active')}, 'sell');
         }
@@ -1016,13 +1268,56 @@ const game = {
         this.player.equipment[itemType] = itemId;
         this.player.inventory[itemId]--;
         
-        this.logMessage(`你裝備了 ${itemToEquip.name}。`, 'reward-msg');
+        this.logMessage(`你裝備了 ${itemToEquip.name}。`, 'reward-msg', 'story');
         
         this.updatePlayerStats();
         this.renderInventoryContent();
     },
+    
+    openMenuView(viewId) {
+        this.viewReturnPath = this.currentView;
+        this.changeView(viewId);
+    },
+
+    openInventoryFromCombat() {
+        this.viewReturnPath = 'combat-view';
+        this.changeView('item-inventory-view');
+        document.getElementById('item-inventory-back-button').textContent = "返回戰鬥";
+    },
+
+    returnToPreviousView() {
+        this.changeView(this.viewReturnPath);
+        if (this.viewReturnPath === 'combat-view') {
+            this.renderCombatUI();
+        }
+    },
+    
+    useItemOutOfCombat(itemId) {
+        if (!this.player.inventory[itemId] || this.player.inventory[itemId] <= 0) return;
+
+        const item = ITEMS[itemId];
+        if (item.effect.includes('heal')) {
+            if (this.player.hp >= this.player.maxHp) {
+                this.logMessage('你的生命值已滿。', '', 'story');
+                return;
+            }
+            
+            this.player.inventory[itemId]--;
+            if (item.effect === 'heal_full') {
+                this.player.hp = this.player.maxHp;
+            } else {
+                this.player.hp = Math.min(this.player.maxHp, this.player.hp + item.value);
+            }
+            
+            this.logMessage(`你使用了 ${item.name}，恢復了生命。`, 'reward-msg', 'story');
+            this.updatePlayerStats();
+            this.renderItemInventoryContent();
+        }
+    },
+
 
     startCombat(enemyId, isStoryBoss = false) {
+        document.getElementById('combat-log').innerHTML = '';
         const enemy = { ...ENEMIES[enemyId] }; 
         this.combatState = {
             isStoryBoss,
@@ -1033,13 +1328,14 @@ const game = {
                 maxHp: this.player.maxHp,
                 attack: this.player.attack,
                 defense: this.player.defense,
-                buffs: {}
+                buffs: {},
+                statusEffects: {}
             },
             enemy: { ...enemy, maxHp: enemy.hp },
             turn: 'player'
         };
 
-        this.logMessage(`你遭遇了 ${enemy.name}！`, 'combat-msg');
+        this.logMessage(`你遭遇了 ${enemy.name}！`, 'combat-msg', 'combat');
         this.startPlayerTurn();
         this.changeView('combat-view');
     },
@@ -1073,6 +1369,17 @@ const game = {
              statHpSpan.classList.add('buffed');
         }
 
+        const statusContainer = document.getElementById('combat-player-status');
+        statusContainer.innerHTML = '';
+        for (const effectKey in player.statusEffects) {
+            const effect = player.statusEffects[effectKey];
+            const statusName = {poison: '中毒', burn: '燒傷', bleed: '流血', sleep: '睡眠'}[effectKey];
+            const span = document.createElement('span');
+            span.className = `status-${effectKey}`;
+            span.textContent = `[${statusName} ${effect.duration}] `;
+            statusContainer.appendChild(span);
+        }
+
 
         const actionsContainer = document.getElementById('combat-actions');
         actionsContainer.innerHTML = '';
@@ -1080,22 +1387,20 @@ const game = {
             const attackBtn = document.createElement('button');
             attackBtn.className = 'game-button';
             attackBtn.textContent = '攻擊';
+            if (player.statusEffects.sleep) attackBtn.disabled = true;
             attackBtn.onclick = () => this.combatAction('attack');
             actionsContainer.appendChild(attackBtn);
 
-            for(const itemId in this.player.inventory) {
-                if(ITEMS[itemId].type === 'potion' && this.player.inventory[itemId] > 0) {
-                     const itemBtn = document.createElement('button');
-                     itemBtn.className = 'game-button';
-                     itemBtn.textContent = `${ITEMS[itemId].name} (x${this.player.inventory[itemId]})`;
-                     itemBtn.onclick = () => this.combatAction('use_item', itemId);
-                     actionsContainer.appendChild(itemBtn);
-                }
-            }
+            const itemBtn = document.createElement('button');
+            itemBtn.className = 'game-button';
+            itemBtn.textContent = '道具';
+            itemBtn.onclick = () => this.openInventoryFromCombat();
+            actionsContainer.appendChild(itemBtn);
             
             const fleeBtn = document.createElement('button');
             fleeBtn.className = 'game-button';
             fleeBtn.textContent = '逃跑';
+             if (player.statusEffects.sleep) fleeBtn.disabled = true;
             fleeBtn.onclick = () => this.combatAction('flee');
             if (this.combatState.isStoryBoss) {
                 fleeBtn.disabled = true;
@@ -1105,21 +1410,54 @@ const game = {
     },
     
     startPlayerTurn() {
-        const { buffs } = this.combatState.player;
+        const { player } = this.combatState;
+        const { buffs, statusEffects } = player;
+
+        for (const effectKey in statusEffects) {
+            const effect = statusEffects[effectKey];
+            if(effect.damage) {
+                const statusName = {poison: '中毒', burn: '燒傷', bleed: '流血'}[effectKey];
+                player.hp = Math.max(0, player.hp - effect.damage);
+                this.logMessage(`你因 ${statusName} 受到 ${effect.damage} 點傷害。`, 'danger-msg', 'combat');
+            }
+            if (player.hp <= 0) {
+                this.renderCombatUI();
+                this.endCombat(false);
+                return;
+            }
+        }
+
         for (const buffKey in buffs) {
             buffs[buffKey].duration--;
             if (buffs[buffKey].duration <= 0) {
-                if (buffKey === 'attack') this.logMessage(`力量藥水的效果消失了。`, 'buff-msg');
+                if (buffKey === 'attack') this.logMessage(`力量藥水的效果消失了。`, 'buff-msg', 'combat');
                 if (buffKey === 'hp') {
-                    this.logMessage(`活力藥水的效果消失了。`, 'buff-msg');
+                    this.logMessage(`活力藥水的效果消失了。`, 'buff-msg', 'combat');
                     this.combatState.player.maxHp -= buffs[buffKey].value;
                     this.combatState.player.hp = Math.min(this.combatState.player.hp, this.combatState.player.maxHp);
                 }
                 delete buffs[buffKey];
             }
         }
+
+        for (const effectKey in statusEffects) {
+            statusEffects[effectKey].duration--;
+            if (statusEffects[effectKey].duration <= 0) {
+                const statusName = {poison: '中毒', burn: '燒傷', bleed: '流血', sleep: '睡眠'}[effectKey];
+                this.logMessage(`${statusName} 效果消失了。`, 'buff-msg', 'combat');
+                delete statusEffects[effectKey];
+            }
+        }
+        
         this.combatState.turn = 'player';
-        this.renderCombatUI();
+
+        if (player.statusEffects.sleep) {
+            this.logMessage(`你陷入睡眠，無法行動！`, 'danger-msg', 'combat');
+            this.renderCombatUI();
+            setTimeout(() => this.endPlayerTurn(), 1500);
+        } else {
+            this.renderCombatUI();
+        }
     },
 
     endPlayerTurn() {
@@ -1145,9 +1483,9 @@ const game = {
             
             if (Math.random() < 0.3) {
                 damage = Math.floor(damage * 1.5);
-                this.logMessage(`暴擊！你對 ${enemy.name} 造成了 ${damage} 點傷害！`, 'crit-msg');
+                this.logMessage(`暴擊！你對 ${enemy.name} 造成了 ${damage} 點傷害！`, 'crit-msg', 'combat');
             } else {
-                this.logMessage(`你對 ${enemy.name} 造成了 ${damage} 點傷害。`, 'combat-msg');
+                this.logMessage(`你對 ${enemy.name} 造成了 ${damage} 點傷害。`, 'combat-msg', 'combat');
             }
             enemy.hp = Math.max(0, enemy.hp - damage);
 
@@ -1158,13 +1496,13 @@ const game = {
                 if (item.effect === 'heal') {
                     const healed = item.value;
                     player.hp = Math.min(player.maxHp, player.hp + healed);
-                    this.logMessage(`你使用了 ${item.name}，恢復了 ${healed} HP。`, 'reward-msg');
+                    this.logMessage(`你使用了 ${item.name}，恢復了 ${healed} HP。`, 'reward-msg', 'combat');
                 } else if (item.effect === 'heal_full') {
                     player.hp = player.maxHp;
-                    this.logMessage(`你使用了 ${item.name}，生命值完全恢復了！`, 'reward-msg');
+                    this.logMessage(`你使用了 ${item.name}，生命值完全恢復了！`, 'reward-msg', 'combat');
                 } else if (item.effect === 'buff_atk') {
                     player.buffs.attack = { multiplier: item.value, duration: item.duration + 1 };
-                    this.logMessage(`你使用了 ${item.name}，攻擊力大幅提升了！`, 'buff-msg');
+                    this.logMessage(`你使用了 ${item.name}，攻擊力大幅提升了！`, 'buff-msg', 'combat');
                 } else if (item.effect === 'buff_hp') {
                     if (player.buffs.hp) {
                          player.maxHp -= player.buffs.hp.value;
@@ -1172,18 +1510,30 @@ const game = {
                     player.buffs.hp = { value: item.value, duration: item.duration + 1 };
                     player.maxHp += item.value;
                     player.hp += item.value;
-                    this.logMessage(`你使用了 ${item.name}，暫時提升了生命上限！`, 'buff-msg');
+                    this.logMessage(`你使用了 ${item.name}，暫時提升了生命上限！`, 'buff-msg', 'combat');
+                } else if (item.effect === 'cure') {
+                    const statusToCure = item.value;
+                    if (player.statusEffects[statusToCure]) {
+                        const statusName = {poison: '中毒', burn: '燒傷', bleed: '流血', sleep: '睡眠'}[statusToCure];
+                        delete player.statusEffects[statusToCure];
+                        this.logMessage(`你使用了 ${item.name}，解除了 ${statusName} 狀態。`, 'reward-msg', 'combat');
+                    } else {
+                        this.logMessage(`你使用了 ${item.name}，但沒有任何效果。`, '', 'combat');
+                    }
                 }
+                this.changeView('combat-view');
+                this.endPlayerTurn();
+                return;
             }
         } else if (type === 'flee') {
             if (Math.random() < 0.7) {
-                this.logMessage('你成功逃跑了。');
+                this.logMessage('你成功逃跑了。', '', 'story');
                 this.player.hp = this.combatState.player.hp;
                 this.updatePlayerStats();
                 this.combatState = {};
                 this.changeView('map-view');
             } else {
-                this.logMessage('逃跑失敗！敵人抓住了機會！', 'combat-msg');
+                this.logMessage('逃跑失敗！敵人抓住了機會！', 'combat-msg', 'combat');
                 this.endPlayerTurn();
             }
             return;
@@ -1197,7 +1547,31 @@ const game = {
         const { player, enemy } = this.combatState;
         const damage = Math.max(1, enemy.attack - player.defense);
         player.hp = Math.max(0, player.hp - damage);
-        this.logMessage(`${enemy.name} 對你造成了 ${damage} 點傷害。`, 'combat-msg');
+        this.logMessage(`${enemy.name} 對你造成了 ${damage} 點傷害。`, 'combat-msg', 'combat');
+
+        const enemyData = ENEMIES[this.combatState.enemyId];
+        
+        if (enemyData.multiStatusEffect && Math.random() < enemyData.multiStatusEffect.chance) {
+            const possibleEffects = enemyData.multiStatusEffect.effects;
+            const effectToApply = { ...possibleEffects[Math.floor(Math.random() * possibleEffects.length)] };
+
+            if (!player.statusEffects[effectToApply.type]) {
+                effectToApply.duration += 1;
+                player.statusEffects[effectToApply.type] = effectToApply;
+                const statusName = {poison: '中毒', burn: '燒傷', bleed: '流血', sleep: '睡眠'}[effectToApply.type];
+                this.logMessage(`凱蘭爵士的攻擊讓你陷入了 ${statusName} 狀態！`, 'danger-msg', 'combat');
+            }
+        } 
+        else if (enemyData.statusEffect && Math.random() < enemyData.statusEffect.chance) {
+            if (!player.statusEffects[enemyData.statusEffect.type]) {
+                const statusName = {poison: '中毒', burn: '燒傷', bleed: '流血', sleep: '睡眠'}[enemyData.statusEffect.type];
+                 player.statusEffects[enemyData.statusEffect.type] = {
+                    damage: enemyData.statusEffect.damage,
+                    duration: enemyData.statusEffect.duration + 1 
+                };
+                this.logMessage(`你陷入了 ${statusName} 狀態！`, 'danger-msg', 'combat');
+            }
+        }
 
         if (player.hp <= 0) {
             this.endCombat(false);
@@ -1212,30 +1586,35 @@ const game = {
         this.player.hp = Math.min(this.combatState.player.hp, this.player.maxHp);
         
         if (isVictory) {
+            this.autoSaveGame();
             const enemyId = this.combatState.enemyId;
             const enemyData = ENEMIES[enemyId];
             
             this.player.gold += enemyData.gold;
             
-            this.logMessage(`${enemyData.name} 被擊敗了！你獲得了 ${enemyData.gold} 金幣。`, 'reward-msg');
+            const summaryLogs = [];
+            summaryLogs.push({ text: `${enemyData.name} 被擊敗了！你獲得了 ${enemyData.gold} 金幣。`, className: 'reward-msg' });
             
             if (enemyData.drops) {
                 if (Math.random() < enemyData.drops.common.chance) {
                     const droppedItem = ITEMS[enemyData.drops.common.id];
                     this.player.inventory[enemyData.drops.common.id] = (this.player.inventory[enemyData.drops.common.id] || 0) + 1;
-                    this.logMessage(`你獲得了 ${droppedItem.name} x1。`, 'reward-msg');
+                    summaryLogs.push({ text: `你獲得了 ${droppedItem.name} x1。`, className: 'reward-msg' });
                 }
                 if (Math.random() < enemyData.drops.rare.chance) {
                     const droppedItemId = enemyData.drops.rare.id;
                     const droppedItem = ITEMS[droppedItemId];
                     this.player.inventory[droppedItemId] = (this.player.inventory[droppedItemId] || 0) + 1;
-                    this.logMessage(`你獲得了稀有的 ${droppedItem.name} x1！`, 'reward-msg');
+                    summaryLogs.push({ text: `你獲得了稀有的 ${droppedItem.name} x1！`, className: 'reward-msg' });
 
                     if(droppedItem.type === 'upgrade') {
                         this.usePermanentUpgrade(droppedItemId);
                     }
                 }
             }
+            
+            document.getElementById('combat-log').innerHTML = '';
+            summaryLogs.forEach(log => this.logMessage(log.text, log.className, 'story'));
             
             if (enemyData.isBoss) {
                 this.player.defeatedBosses.push(enemyId);
@@ -1245,22 +1624,22 @@ const game = {
                 } else if (enemyId === 'griffin') {
                      this.advanceStory('s5_wasteland_unlocked');
                 } else if (enemyId === 'wasteland_tyrant') {
-                    this.storyProgress = 's6_peak_unlocked';
-                    this.logMessage('燼火之巔的道路似乎暢通了...', 'story-msg');
-                    this.changeView('map-view');
+                    this.advanceStory('s6_peak_unlocked');
                 } else if (enemyId === 'boss') {
                     this.advanceStory('s8_ending');
                 }
             } else {
-                this.changeView('map-view');
+                this.renderRegion(this.currentRegionId);
+                this.changeView('region-view');
             }
         } else {
-            this.logMessage('你被擊敗了……遊戲結束。', 'danger-msg');
+            document.getElementById('combat-log').innerHTML = '';
+            this.logMessage('你被擊敗了……遊戲結束。', 'danger-msg', 'story');
             this.changeView('story-view');
             document.getElementById('story-title').textContent = '旅程的終點';
             document.getElementById('story-text').textContent = '妳的冒險到此為止了。但妳的勇氣將會被永遠銘記。';
             const optionsContainer = document.getElementById('story-options');
-            optionsContainer.innerHTML = `<button class="game-button" onclick="game.init()">重新開始</button>`;
+            optionsContainer.innerHTML = `<button class="game-button" onclick="game.init(true)">重新開始</button>`;
         }
         
         this.updatePlayerStats();
