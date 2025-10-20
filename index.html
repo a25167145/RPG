@@ -759,7 +759,20 @@ const game = {
         localStorage.removeItem(this.saveKey);
         this.logMessage('所有存檔已刪除。', '', 'story');
     },
-
+    autoSaveGame() {
+        let saveSlots = JSON.parse(localStorage.getItem(this.saveKey)) || [null, null, null];
+        
+        const gameState = {
+            player: this.player,
+            storyProgress: this.storyProgress,
+            saveTime: new Date().toLocaleString('zh-TW')
+        };
+        
+        saveSlots[0] = gameState; // 總是使用欄位 0 (第一個) 作為自動存檔
+        localStorage.setItem(this.saveKey, JSON.stringify(saveSlots));
+        
+        this.logMessage('遊戲進度已自動儲存至欄位 1。', 'reward-msg', 'story');
+    },
     renderSaveSlots() {
         const list = document.getElementById('save-slots-list');
         list.innerHTML = '';
